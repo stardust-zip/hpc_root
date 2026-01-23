@@ -16,10 +16,20 @@ cd hpc_root
 ```
 - Sau khi clone thì tất cả các microservice sẽ có trong thư mục hpc_root.
 
+### Chạy Docker
+#### Nếu chạy lần đầu trên máy
+```bash
+docker compose up -d --build
+```
+#### Nếu đã chạy từ trước trên máy 
+```bash
+docker compose up -d
+```
+
 ### Quy trình làm việc hàng ngày
 #### Cập nhật code (Pull)
 ```bash
-git pull --recursive-submodules
+git pull --recurse-submodules
 ```
 
 #### Phát triển tính năng
