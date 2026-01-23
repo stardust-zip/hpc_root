@@ -14,24 +14,24 @@ git clone --recurse-submodules https://github.com/nguyenhieu/hpc_root.git
 
 cd hpc_root
 ```
-- Sau khi clone thì tất cả các microservice sẽ có trong thư mục hpc_root.
+- Sau khi clone thì tất cả các microservice sẽ có trong thư mục `hpc_root`.
 
 ### Quy trình làm việc hàng ngày
-#### Cập nhật code (Pull)
+#### Cập nhật code (`pull`)
 ```bash
 git pull --recursive-submodules
 ```
 
 #### Phát triển tính năng
 - **VD:** Cần sửa code trong System-Management
-1. **Đi vào service và Checkout nhánh:**
+1. **Đi vào service và `checkout` nhánh:**
 ```bash
 cd System-Management
 git checkout main # hoặc nhánh mà nhóm dùng idk 
 git pull origin main
 ```
 
-2. **Code, Commit and Push (Trong microservice của mình):**
+2. **Code, `commit` and `push` (Trong microservice của mình):**
 ```bash
 # Code xong
 git add . 
