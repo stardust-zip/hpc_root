@@ -1,14 +1,6 @@
 # README
 
-## Giới thiệu
-- **System-Management:** Văn Anh, Đức Anh
-- **Module-TuyenDung:** Nam
-- **LMS:** Lâm 
-- **hpc_drive:** Độ
-- **hpc_dispatch_management:** Hiếu
-
-## Cài đặt
-### Clone về máy 
+## Clone về máy 
 ```bash
 git clone --recurse-submodules https://github.com/nguyenhieu/hpc_root.git
 
@@ -16,23 +8,24 @@ cd hpc_root
 ```
 - Sau khi clone thì tất cả các microservice sẽ có trong thư mục `hpc_root`.
 
-### Chạy Docker
-#### Nếu chạy lần đầu trên máy
+## Chạy script cài đặt
+### Cấp quyền
 ```bash
-docker compose up -d --build
+chmod +x setup.sh 
 ```
-#### Nếu đã chạy từ trước trên máy 
+### Cài đặt
 ```bash
-docker compose up -d
+./setup.sh
 ```
+- Sau khi cài đặt, sẽ có các microservices + fe và tài khoản để truy cập.
 
-### Quy trình làm việc hàng ngày
-#### Cập nhật code (`pull`)
+## Quy trình làm việc hàng ngày
+### Cập nhật code (`pull`)
 ```bash
 git pull --recurse-submodules
 ```
 
-#### Phát triển tính năng
+### Phát triển tính năng
 - **VD:** Cần sửa code trong System-Management
 1. **Đi vào service và `checkout` nhánh:**
 ```bash
