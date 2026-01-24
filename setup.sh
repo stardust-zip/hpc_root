@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Stop execution if any command fails
 set -e
 
@@ -43,20 +41,21 @@ if [ ! -f System-Management/.env ]; then
 fi
 
 echo "🐳 Đang build và start containers..."
-docker-compose up -d --build
+docker compose up -d --build
 
 echo "⏳ Chờ Database (15s)..."
 sleep 15
 
 echo "🌱 Đang Seed Database..."
-docker-compose exec -T sys_app composer install --no-interaction --prefer-dist
-docker-compose exec -T sys_app chmod -R 777 storage bootstrap/cache
-docker-compose exec -T sys_app php artisan key:generate
+docker-compose exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
+docker compose exec -T sys_app chmod -R 777 storage bootstrap/cache
+docker compose exec -T sys_app composer install --no-interaction --prefer-dist
+docker compose exec -T sys_app php artisan key:generate
 
-docker-compose exec -T sys_app php artisan migrate --force
-docker-compose exec -T sys_app php artisan db:seed --class=AdminSeeder
+docker compose exec -T sys_app php artisan migrate --path=database/migrations --force
+docker compose exec -T sys_app php artisan db:seed --class=AdminSeeder
 
-docker-compose exec -T sys_app php artisan optimize:clear
+docker compose exec -T sys_app php artisan optimize:clear
 
 echo "=================================="
 echo "✅ ĐÃ XONG!"
