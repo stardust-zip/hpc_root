@@ -6,7 +6,7 @@ git clone --recurse-submodules https://github.com/nguyenhieu/hpc_root.git
 
 cd hpc_root
 ```
-> [!NOTE] Note
+> [!NOTE]
 > Sau khi clone thì tất cả các microservice sẽ có trong thư mục `hpc_root`.
 
 ## Chạy script cài đặt
@@ -21,7 +21,7 @@ chmod +x setup.sh
 - Sau khi cài đặt, sẽ có các microservices + fe và tài khoản để truy cập.
 
 ### Lỗi khi cài đặt
-> [!CAUTION] staff_count lỗi 
+> [!CAUTION]
 > Nếu xảy ra lỗi liên quan đến `staff_count` khi cài đặt, thực hiện các bước sau
 
 1. **Truy cập `System-Management`:**
