@@ -114,7 +114,7 @@ services:
       dockerfile: Dockerfile
     container_name: module_tuyendung
     working_dir: /var/www/html
-    environments:
+    environment:
       - APP_URL=${APP_URL_TUYEN}
     volumes:
       - ./Module_Tuyendung/back-end:/var/www/html
@@ -162,7 +162,7 @@ services:
     working_dir: /var/www
     volumes:
       - ./System-Management:/var/www
-    environments:
+    environment:
       - APP_URL=${APP_URL_SYS}
       - DB_HOST=sys_db
     networks:
