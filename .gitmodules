@@ -13,3 +13,6 @@
 [submodule "System-Management"]
 	path = System-Management
 	url = https://github.com/hoanghungict/System-Management
+[submodule "fe-portal"]
+	path = fe-portal
+	url = https://gitlab.com/hoanghung.ict/fe-portal
