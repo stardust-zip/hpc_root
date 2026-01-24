@@ -114,6 +114,8 @@ services:
       dockerfile: Dockerfile
     container_name: module_tuyendung
     working_dir: /var/www/html
+    environments:
+      - APP_URL=${APP_URL_TUYEN}
     volumes:
       - ./Module_Tuyendung/back-end:/var/www/html
     networks:
@@ -160,6 +162,9 @@ services:
     working_dir: /var/www
     volumes:
       - ./System-Management:/var/www
+    environments:
+      - APP_URL=${APP_URL_SYS}
+      - DB_HOST=sys_db
     networks:
       hpc_shared_network:
         aliases:
@@ -322,16 +327,11 @@ services:
     ports:
       - "3000:3001" 
     environment:
-      # Server
-      # - NEXT_PUBLIC_API_URL=http://103.126.161.228:8082/api
-      # Local
-      - NEXT_PUBLIC_API_URL=http://localhost:8082/api
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST}
       - STORAGE_SERVICE_URL=http://sys_web:80/api
-      # Reverb Public IP
-      - NEXT_PUBLIC_REVERB_HOST=103.126.161.228
-      # Reverb local
-      - NEXT_PUBLIC_REVERB_HOST=local
       - NEXT_PUBLIC_REVERB_PORT=8082
+      - NEXT_PUBLIC_REVERB_SCHEME=http
     volumes:
       # Bind Mount for live editing
       - ./fe-portal:/app
