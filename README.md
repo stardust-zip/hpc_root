@@ -1,6 +1,13 @@
 # README
 
-## Clone về máy 
+## Cần cài đặt trước khi cài app
+- Ansible:
+```bash
+sudo apt install ansible
+```
+
+## Cài đặt app
+### Clone về máy 
 ```bash
 git clone --recurse-submodules https://github.com/nguyenhieu/hpc_root.git
 
@@ -9,60 +16,9 @@ cd hpc_root
 > [!NOTE]
 > Sau khi clone thì tất cả các microservice sẽ có trong thư mục `hpc_root`.
 
-## Chạy script cài đặt
-### Cấp quyền
+### Chạy Ansible
 ```bash
-chmod +x setup.sh 
-```
-### Cài đặt
-```bash
-./setup.sh
-```
-- Sau khi cài đặt, sẽ có các microservices + fe và tài khoản để truy cập.
-
-### Lỗi khi cài đặt
-> [!CAUTION]
-> Nếu xảy ra lỗi liên quan đến `staff_count` khi cài đặt, thực hiện các bước sau
-
-1. **Truy cập `System-Management`:**
-```bash
-cd System-Management
-```
-2. **Chỉnh file `database/seeders/AdminSeeder.php`:**
-```php
-class AdminSeeder extends Seeder
-{
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        // Chạy seeder cho mẫu thông báo
-        $this->call(NotificationTemplateSeeder::class);
-
-        // Kiểm tra và tạo đơn vị mẫu (unit)
-        $unit = DB::table('department')->where('name', 'Khoa Công nghệ Thông tin')->first();
-        if (!$unit) {
-            $unitId = DB::table('department')->insertGetId([
-                'name' => 'Khoa Công nghệ Thông tin',
-                'type' => 'faculty',
-                'parent_id' => null,
-                'staff_count' => 0 <-- Thêm staff_count
-            ]);
-        } else {
-            $unitId = $unit->id;
-        }
-```
-
-3. **Xóa các volume hỏng:**
-```bash
-# Tại hpc_root
-docker compose down -v
-```
-
-4. **Cài đặt lại:**
-```bash
-./setup.sh
+ansible-playbook deploy.yml
 ```
 
 ## Quy trình làm việc hàng ngày
