@@ -9,7 +9,7 @@
       private: false
 
   tasks:
-    # 1. Define variables based on inputs
+    # 1. Setup and configuration
     - name: Set IP for Localhost
       set_fact:
         public_host: "localhost"
@@ -29,7 +29,7 @@
       debug:
         msg: "Deploying to: {{ public_host }}"
 
-    # 2. File management
+    # 2. files management
     - name: Generate .env file from template
       template:
         src: .env.j2
@@ -57,11 +57,11 @@
       register: up_result
       changed_when: "'Started' in up_result.stderr or 'Created' in up_result.stderr"
 
-    # 4. Post installation setup and migrations
-    - name: Create Storage Directories
+    # 4. System-Management setup
+    - name: Create Sys Storage Directories
       command: docker compose exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
 
-    - name: Fix Storage Permissions
+    - name: Fix Sys Storage Permissions
       command: docker compose exec -T sys_app chmod -R 777 storage bootstrap/cache
 
     - name: Copy System-Management .env (Host Side)
@@ -71,16 +71,51 @@
         force: no
       ignore_errors: yes
 
-    - name: Install System Dependencies (Composer)
+    - name: Install Sys Dependencies (Composer)
       command: docker compose exec -T sys_app composer install --no-interaction --prefer-dist
-      register: composer_install
-      changed_when: "'Nothing to install' not in composer_install.stdout"
+      register: composer_install_sys
+      changed_when: "'Nothing to install' not in composer_install_sys.stdout"
 
-    - name: Generate App Key
+    - name: Generate Sys App Key
       command: docker compose exec -T sys_app php artisan key:generate
-      register: key_gen
-      changed_when: "'Application key set' in key_gen.stdout"
+      register: key_gen_sys
+      changed_when: "'Application key set' in key_gen_sys.stdout"
 
+    # 5. Recruitment Service Setup
+    - name: Copy Tuyen .env (Host Side)
+      copy:
+        src: Module_Tuyendung/back-end/.env.example
+        dest: Module_Tuyendung/back-end/.env
+        force: no
+      ignore_errors: yes
+
+    - name: Fix Tuyen Environemnt by installing missing tools
+      shell: |
+        docker compose exec -T -u root tuyen_app sh -c "
+          if command -v apt-get >/dev/null; then
+            apt-get update && apt-get install -y zip unzip git
+          elif command -v apk >/dev/null; then
+            apk add --no-cache zip unzip git
+          fi
+        "
+      register: fix_tuyen
+      changed_when: "'installed' in fix_tuyen.stdout"
+
+    - name: Install Tuyen Dependencies (Composer)
+      command: docker compose exec -T tuyen_app composer install --no-interaction --prefer-dist
+      register: composer_install_tuyen
+      changed_when: "'Nothing to install' not in composer_install_tuyen.stdout"
+
+    - name: Generate Tuyen App Key
+      command: docker compose exec -T tuyen_app php artisan key:generate
+      register: key_gen_tuyen
+      changed_when: "'Application key set' in key_gen_tuyen.stdout"
+
+    - name: Fix Tuyen Permissions
+      command: docker compose exec -T tuyen_app chmod -R 777 storage bootstrap/cache
+      ignore_errors: yes # Ignore if folders don't exist yet
+
+    # 4. Post Depoyment and Migrations
     - name: Wait for MySQL to be ready
       command: docker compose exec -T shared_db mysqladmin ping -h localhost -u root -proot
       register: db_check
@@ -106,11 +141,11 @@
       register: tuyen_migrate
       changed_when: "'Migrated' in tuyen_migrate.stdout"
 
-    # 5. Summary
+    # 5. End
     - name: Deployment Complete
       debug:
         msg:
-          - "SUCCESS! System is running! WOW!"
+          - "SUCCESS! System is running."
           - "Frontend: http://{{ public_host }}:3005"
           - "System:   http://{{ public_host }}:8082"
           - "LMS:      http://{{ public_host }}:8083"
