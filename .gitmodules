@@ -7,9 +7,6 @@
 [submodule "Module_Tuyendung"]
 	path = Module_Tuyendung
 	url = https://github.com/vxnam04/Module_Tuyendung
-[submodule "LMS"]
-	path = LMS
-	url = https://github.com/lamham2292004/LMS
 [submodule "System-Management"]
 	path = System-Management
 	url = https://github.com/hoanghungict/System-Management
