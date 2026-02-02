@@ -13,3 +13,6 @@
 [submodule "fe-portal"]
 	path = fe-portal
 	url = https://gitlab.com/hoanghung.ict/fe-portal
+[submodule "LMS"]
+	path = LMS
+	url = https://github.com/lamham2292004/LMS.git
