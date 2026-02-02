@@ -14,11 +14,9 @@ services:
       - ./hpc_dispatch_management/src:/app/src
       - ./hpc_dispatch_management/hpc_dispatch.db:/app/hpc_dispatch.db
     environment:
-      # Pointing to System Management Web (sys_web) for notifications/auth
       - NOTIFICATION_SERVICE_URL=http://sys_web/api/v1/events/publish
       - DATABASE_URL=sqlite:///./hpc_dispatch.db
       - HPC_USER_SERVICE_URL=http://sys_web/api/v1
-      # Pointing to HPC Drive service
       - HPC_DRIVE_SERVICE_URL=http://hpc_drive:7777/api/v1/drive
     networks:
       - hpc_shared_network
@@ -38,7 +36,6 @@ services:
       - uploads_data:/app/src/hpc_drive/uploads
     environment:
       DATABASE_URL: "sqlite:////app/data/drive.db"
-      # Pointing to System Management Web
       AUTH_SERVICE_ME_URL: "http://sys_web:80/api/v1/me"
     networks:
       - hpc_shared_network
@@ -47,48 +44,6 @@ services:
   # ==============================================================================
   # SERVICE 3: LMS (Java/Spring Boot)
   # ==============================================================================
-  lms_mysql:
-    image: mysql:8.0
-    container_name: lms-mysql
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    environment:
-      MYSQL_DATABASE: LMS
-      MYSQL_ROOT_PASSWORD: abc123-
-      MYSQL_USER: lms_user
-      MYSQL_PASSWORD: lms_password
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "3308:3306" # Mapped to 3308 to avoid conflict with System-Mgmt (3307) or Host (3306)
-    volumes:
-      - lms_mysql_data:/var/lib/mysql
-      - ./LMS/docker/mysql/init:/docker-entrypoint-initdb.d:ro
-      - ./LMS/docker/mysql/conf.d:/etc/mysql/conf.d:ro
-    networks:
-      - hpc_shared_network
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-pabc123-",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    command:
-      - --default-authentication-plugin=mysql_native_password
-      - --max_connections=200
-
   lms-app:
     build:
       context: ./LMS
@@ -107,18 +62,17 @@ services:
       SERVER_PORT: 8083
       SPRING_PROFILES_ACTIVE: prod
       TZ: Asia/Ho_Chi_Minh
-      # Database connection (Using service name lms_mysql)
-      SPRING_DATASOURCE_URL: jdbc:mysql://lms_mysql:3306/LMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+      # UPDATED: Points to shared_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://shared_db:3306/LMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: abc123-
-      # External Services (Pointing to System Management)
+      SPRING_DATASOURCE_PASSWORD: root
       NOTIFICATION_SERVICE_URL: http://sys_web:80
       IDENTITY_SERVICE_URL: http://sys_web:80
     volumes:
       - ./LMS/uploads:/app/uploads
       - ./LMS/logs:/app/logs
     depends_on:
-      lms_mysql:
+      shared_db:
         condition: service_healthy
     networks:
       - hpc_shared_network
@@ -134,12 +88,18 @@ services:
     working_dir: /var/www/html
     environment:
       - APP_URL=${APP_URL_TUYEN}
+      # UPDATED: Points to shared_db
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=module_tuyendung
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
     volumes:
       - ./Module_Tuyendung/back-end:/var/www/html
     networks:
       - hpc_shared_network
     depends_on:
-      - tuyen_db
+      - shared_db
 
   tuyen_web:
     image: nginx:alpine
@@ -153,24 +113,6 @@ services:
       - hpc_shared_network
     depends_on:
       - tuyen_app
-
-  tuyen_db:
-    image: mysql:8.0
-    container_name: mysql_tuyendung
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    environment:
-      MYSQL_DATABASE: module_tuyendung
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3309:3306"
-    volumes:
-      - tuyen_db_data:/var/lib/mysql
-    networks:
-      - hpc_shared_network
 
   # ==============================================================================
   # SERVICE 5: SYSTEM MANAGEMENT (Core - PHP/Laravel)
@@ -186,11 +128,18 @@ services:
       - ./System-Management:/var/www
     environment:
       - APP_URL=${APP_URL_SYS}
-      - DB_HOST=sys_db
+      # UPDATED: Points to shared_db
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
     networks:
       hpc_shared_network:
         aliases:
-          - app # Crucial: Allows Nginx to find this service as "app" defined in nginx.conf
+          - app
+    depends_on:
+      - shared_db
 
   sys_web:
     image: nginx:alpine
@@ -206,27 +155,7 @@ services:
     networks:
       hpc_shared_network:
         aliases:
-          - hpc_web # Crucial: Allows other services (Drive, Dispatch) to find this as http://hpc_web
-
-  sys_db:
-    image: mysql:8.0
-    container_name: hpc_db
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: system_services
-      MYSQL_USER: system_services
-      MYSQL_PASSWORD: hpc123
-    ports:
-      - "3307:3306"
-    volumes:
-      - sys_db_data:/var/lib/mysql
-    networks:
-      - hpc_shared_network
+          - hpc_web
 
   sys_redis:
     image: redis:alpine
@@ -241,9 +170,8 @@ services:
     networks:
       hpc_shared_network:
         aliases:
-          - redis # Allows Laravel to connect via host: redis
+          - redis
 
-  # TODO3: Bị chạy lặp
   sys_reverb:
     build:
       context: ./System-Management
@@ -272,7 +200,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      # JVM heap limit
       KAFKA_OPTS: "-Xmx128m -Xms128m"
     ports:
       - "2181:2181"
@@ -317,7 +244,6 @@ services:
     working_dir: /var/www
     volumes:
       - ./System-Management:/var/www
-    # MERGED COMMAND: Process 'emails' first, then 'default'
     command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
     depends_on:
       - sys_app
@@ -363,11 +289,38 @@ services:
       - NEXT_PUBLIC_REVERB_PORT=8082
       - NEXT_PUBLIC_REVERB_SCHEME=http
     volumes:
-      # Bind Mount for live editing
       - ./fe-portal:/app
       - /app/node_modules
     networks:
       - hpc_shared_network
+
+  # ==============================================================================
+  # SERVICE 7: SHARED DATABASE (Replaces all 3 previous DBs)
+  # ==============================================================================
+  shared_db:
+    image: mysql:8.0
+    container_name: shared_mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - shared_db_data:/var/lib/mysql
+      - ./create_dbs.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - hpc_shared_network
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 # ==============================================================================
 # GLOBAL VOLUMES & NETWORKS
@@ -379,6 +332,4 @@ networks:
 volumes:
   drive_data:
   uploads_data:
-  lms_mysql_data:
-  tuyen_db_data:
-  sys_db_data:
+  shared_db_data:
