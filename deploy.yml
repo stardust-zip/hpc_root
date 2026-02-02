@@ -1,0 +1,117 @@
+---
+- name: Deploy HPC Root
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_prompt:
+    - name: target_env
+      prompt: "Which environment? (1=Localhost, 2=Production Server)"
+      private: false
+
+  tasks:
+    # 1. Define variables based on inputs
+    - name: Set IP for Localhost
+      set_fact:
+        public_host: "localhost"
+      when: target_env == "1"
+
+    - name: Set IP for Production
+      set_fact:
+        public_host: "103.126.161.228"
+      when: target_env == "2"
+
+    - name: Verify Input
+      fail:
+        msg: "Invalid selection. Please choose 1 or 2."
+      when: public_host is not defined
+
+    - name: Display Configuration
+      debug:
+        msg: "Deploying to: {{ public_host }}"
+
+    # 2. File management
+    - name: Generate .env file from template
+      template:
+        src: .env.j2
+        dest: .env
+        mode: "0644"
+
+    - name: Create DB Init Script
+      copy:
+        dest: create_dbs.sql
+        content: |
+          CREATE DATABASE IF NOT EXISTS LMS;
+          CREATE DATABASE IF NOT EXISTS module_tuyendung;
+          CREATE DATABASE IF NOT EXISTS system_services;
+          GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+        mode: "0644"
+
+    # 3. Docker deployment
+    - name: Tear down old containers to remove zombies (Safety)
+      command: docker compose down --remove-orphans
+      register: down_result
+      changed_when: "'Removed' in down_result.stderr"
+
+    - name: Start Docker Compose
+      command: docker compose up -d
+      register: up_result
+      changed_when: "'Started' in up_result.stderr or 'Created' in up_result.stderr"
+
+    # 4. Post installation setup and migrations
+    - name: Create Storage Directories
+      command: docker compose exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
+
+    - name: Fix Storage Permissions
+      command: docker compose exec -T sys_app chmod -R 777 storage bootstrap/cache
+
+    - name: Copy System-Management .env (Host Side)
+      copy:
+        src: System-Management/.env.example
+        dest: System-Management/.env
+        force: no
+      ignore_errors: yes
+
+    - name: Install System Dependencies (Composer)
+      command: docker compose exec -T sys_app composer install --no-interaction --prefer-dist
+      register: composer_install
+      changed_when: "'Nothing to install' not in composer_install.stdout"
+
+    - name: Generate App Key
+      command: docker compose exec -T sys_app php artisan key:generate
+      register: key_gen
+      changed_when: "'Application key set' in key_gen.stdout"
+
+    - name: Wait for MySQL to be ready
+      command: docker compose exec -T shared_db mysqladmin ping -h localhost -u root -proot
+      register: db_check
+      until: db_check.rc == 0
+      retries: 15
+      delay: 5
+
+    - name: Run System Migrations (Core Only)
+      command: docker compose exec -T sys_app php artisan migrate --path=database/migrations --force
+      register: sys_migrate
+      changed_when: "'Migrated' in sys_migrate.stdout"
+
+    - name: Run System Seeds (Admin Only)
+      command: docker compose exec -T sys_app php artisan db:seed --class=AdminSeeder
+      register: sys_seed
+      changed_when: "'Seeded' in sys_seed.stdout"
+
+    - name: Clear Cache (Optimization)
+      command: docker compose exec -T sys_app php artisan optimize:clear
+
+    - name: Run Tuyen Migrations
+      command: docker compose exec -T tuyen_app php artisan migrate --force
+      register: tuyen_migrate
+      changed_when: "'Migrated' in tuyen_migrate.stdout"
+
+    # 5. Summary
+    - name: Deployment Complete
+      debug:
+        msg:
+          - "SUCCESS! System is running! WOW!"
+          - "Frontend: http://{{ public_host }}:3005"
+          - "System:   http://{{ public_host }}:8082"
+          - "LMS:      http://{{ public_host }}:8083"
+          - "Tuyen:    http://{{ public_host }}:8020"
