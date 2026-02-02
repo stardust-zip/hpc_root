@@ -243,6 +243,7 @@ services:
         aliases:
           - redis # Allows Laravel to connect via host: redis
 
+  # TODO3: Bị chạy lặp
   sys_reverb:
     build:
       context: ./System-Management
@@ -307,32 +308,17 @@ services:
         aliases:
           - kafka
 
-  sys_queue:
+  sys_queue_worker:
     build:
       context: ./System-Management
       dockerfile: Dockerfile
-    container_name: hpc_queue
+    container_name: hpc_queue_worker
     restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./System-Management:/var/www
-    command: php artisan queue:work --queue=emails --verbose --tries=3 --timeout=90
-    depends_on:
-      - sys_app
-      - sys_redis
-    networks:
-      - hpc_shared_network
-
-  sys_queue_default:
-    build:
-      context: ./System-Management
-      dockerfile: Dockerfile
-    container_name: hpc_queue_default
-    restart: unless-stopped
-    working_dir: /var/www
-    volumes:
-      - ./System-Management:/var/www
-    command: php artisan queue:work --verbose --tries=3 --timeout=90
+    # MERGED COMMAND: Process 'emails' first, then 'default'
+    command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
     depends_on:
       - sys_app
       - sys_redis
