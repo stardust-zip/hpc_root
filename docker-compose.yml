@@ -51,6 +51,10 @@ services:
     image: mysql:8.0
     container_name: lms-mysql
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       MYSQL_DATABASE: LMS
       MYSQL_ROOT_PASSWORD: abc123-
@@ -66,12 +70,22 @@ services:
     networks:
       - hpc_shared_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pabc123-"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-pabc123-",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 30s
-    command: 
+    command:
       - --default-authentication-plugin=mysql_native_password
       - --max_connections=200
 
@@ -85,6 +99,10 @@ services:
     restart: unless-stopped
     ports:
       - "8083:8083"
+    deploy:
+      resources:
+        limits:
+          memory: 700M
     environment:
       SERVER_PORT: 8083
       SPRING_PROFILES_ACTIVE: prod
@@ -140,6 +158,10 @@ services:
     image: mysql:8.0
     container_name: mysql_tuyendung
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       MYSQL_DATABASE: module_tuyendung
       MYSQL_ROOT_PASSWORD: root
@@ -190,6 +212,10 @@ services:
     image: mysql:8.0
     container_name: hpc_db
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: system_services
@@ -206,6 +232,10 @@ services:
     image: redis:alpine
     container_name: hpc_redis
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64M
     ports:
       - "6380:6379"
     networks:
@@ -234,9 +264,15 @@ services:
     image: confluentinc/cp-zookeeper:latest
     container_name: hpc_zookeeper
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      # JVM heap limit
+      KAFKA_OPTS: "-Xmx128m -Xms128m"
     ports:
       - "2181:2181"
     networks:
@@ -252,6 +288,10 @@ services:
       - sys_zookeeper
     ports:
       - "9092:9092"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: sys_zookeeper:2181
@@ -325,7 +365,11 @@ services:
     container_name: fe_portal
     restart: unless-stopped
     ports:
-      - "3000:3001" 
+      - "3000:3001"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST}
