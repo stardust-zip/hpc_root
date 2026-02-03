@@ -3,13 +3,13 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - 'System-Management/**'
-      - 'fe-portal/**'
-      - 'LMS/**'
-      - 'Module_Tuyendung/**'
-      - 'hpc_dispatch_management/**'
-      - 'hpc_drive/**'
+    # paths:
+    #   - 'System-Management/**'
+    #   - 'fe-portal/**'
+    #   - 'LMS/**'
+    #   - 'Module_Tuyendung/**'
+    #   - 'hpc_dispatch_management/**'
+    #   - 'hpc_drive/**'
 
 jobs:
   build-and-push:
