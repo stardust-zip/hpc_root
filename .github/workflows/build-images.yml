@@ -3,13 +3,6 @@ name: Build and Push Docker Images
 on:
   push:
     branches: [ "main" ]
-    # paths:
-    #   - 'System-Management/**'
-    #   - 'fe-portal/**'
-    #   - 'LMS/**'
-    #   - 'Module_Tuyendung/**'
-    #   - 'hpc_dispatch_management/**'
-    #   - 'hpc_drive/**'
 
 jobs:
   build-and-push:
@@ -18,32 +11,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # 1. System Management (Core PHP)
           - service: system-management
             context: ./System-Management
             image_name: hpc-system-management
-
-          # 2. Frontend (Next.js)
           - service: fe-portal
             context: ./fe-portal
             image_name: hpc-fe-portal
-
-          # 3. LMS (Java)
           - service: lms
             context: ./LMS
             image_name: hpc-lms
-
-          # 4. Recruitment (Tuyen - PHP)
           - service: tuyen-dung
             context: ./Module_Tuyendung/back-end
             image_name: hpc-tuyen-dung
-
-          # 5. Dispatch Service (Python)
           - service: dispatch
             context: ./hpc_dispatch_management
             image_name: hpc-dispatch
-
-          # 6. Drive Service (Python)
           - service: drive
             context: ./hpc_drive
             image_name: hpc-drive
@@ -52,7 +34,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: recursive  
+          submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Docker Hub

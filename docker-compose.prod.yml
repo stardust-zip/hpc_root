@@ -1,0 +1,311 @@
+services:
+  # SERVICE 1: SYSTEM MANAGEMENT
+  sys_app:
+    image: pandora08/hpc-system-management:latest  
+    container_name: hpc_app
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      - APP_URL=${APP_URL_SYS}
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    networks:
+      hpc_shared_network:
+        aliases:
+          - app
+    depends_on:
+      - shared_db
+
+  sys_web:
+    image: nginx:alpine
+    container_name: hpc_web
+    restart: always
+    ports:
+      - "8082:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    volumes:
+      - ./System-Management/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - sys_app
+    networks:
+      hpc_shared_network:
+        aliases:
+          - hpc_web
+
+  sys_redis:
+    image: redis:alpine
+    container_name: hpc_redis
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    ports:
+      - "6380:6379"
+    networks:
+      hpc_shared_network:
+        aliases:
+          - redis
+
+  sys_reverb:
+    image: pandora08/hpc-system-management:latest
+    container_name: hpc_reverb
+    command: php artisan reverb:start
+    deploy:
+      resources:
+        limits:
+          memory: 256MB
+    depends_on:
+      - sys_app
+      - sys_redis
+    ports:
+      - "8081:8080"
+    networks:
+      - hpc_shared_network
+
+  sys_zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: hpc_zookeeper
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      KAFKA_OPTS: "-Xmx128m -Xms128m"
+    ports:
+      - "2181:2181"
+    networks:
+      hpc_shared_network:
+        aliases:
+          - zookeeper
+
+  sys_kafka:
+    image: confluentinc/cp-kafka:6.2.10
+    container_name: hpc_kafka
+    restart: always
+    depends_on:
+      - sys_zookeeper
+    ports:
+      - "9092:9092"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: sys_zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://hpc_kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+    networks:
+      hpc_shared_network:
+        aliases:
+          - kafka
+
+  sys_queue_worker:
+    image: pandora08/hpc-system-management:latest
+    container_name: hpc_queue_worker
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
+    depends_on:
+      - sys_app
+      - sys_redis
+    networks:
+      - hpc_shared_network
+
+  sys_kafka_consumer:
+    image: pandora08/hpc-system-management:latest
+    container_name: hpc_kafka_consumer
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    command: php artisan kafka:consume
+    depends_on:
+      - sys_app
+      - sys_kafka
+    networks:
+      - hpc_shared_network
+
+  # SERVICE 2: MODULE TUYENDUNG
+  tuyen_app:
+    image: pandora08/hpc-tuyen-dung:latest
+    container_name: module_tuyendung
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    environment:
+      - APP_URL=${APP_URL_TUYEN}
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=module_tuyendung
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+    networks:
+      - hpc_shared_network
+    depends_on:
+      - shared_db
+
+  tuyen_web:
+    image: nginx:alpine
+    container_name: backend_tuyendung
+    ports:
+      - "8020:80"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    volumes:
+      - ./Module_Tuyendung/back-end/nginx:/etc/nginx/conf.d:ro
+    networks:
+      - hpc_shared_network
+    depends_on:
+      - tuyen_app
+
+  # ==============================================================================
+  # SERVICE 3: LMS
+  # ==============================================================================
+  lms-app:
+    image: pandora08/hpc-lms:latest
+    container_name: lms-app
+    restart: always
+    ports:
+      - "8083:8083"
+    deploy:
+      resources:
+        limits:
+          memory: 700M
+    environment:
+      SERVER_PORT: 8083
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Asia/Ho_Chi_Minh
+      SPRING_DATASOURCE_URL: jdbc:mysql://shared_db:3306/LMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      NOTIFICATION_SERVICE_URL: http://sys_web:80
+      IDENTITY_SERVICE_URL: http://sys_web:80
+    volumes:
+      - ./LMS/uploads:/app/uploads
+      - ./LMS/logs:/app/logs
+    depends_on:
+      shared_db:
+        condition: service_healthy
+    networks:
+      - hpc_shared_network
+
+  # SERVICE 4: FRONTEND
+  fe_portal:
+    image: pandora08/hpc-fe-portal:latest
+    container_name: fe_portal
+    restart: always
+    ports:
+      - "3005:3001"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST}
+      - STORAGE_SERVICE_URL=http://sys_web:80/api
+      - NEXT_PUBLIC_REVERB_PORT=8082
+      - NEXT_PUBLIC_REVERB_SCHEME=http
+    networks:
+      - hpc_shared_network
+
+  # SERVICE 5: HPC DISPATCH & DRIVE
+  dispatch_service:
+    image: pandora08/hpc-dispatch:latest
+    container_name: hpc_dispatch_service
+    restart: always
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./hpc_dispatch_management/hpc_dispatch.db:/app/hpc_dispatch.db
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    environment:
+      - NOTIFICATION_SERVICE_URL=http://sys_web/api/v1/events/publish
+      - DATABASE_URL=sqlite:///./hpc_dispatch.db
+      - HPC_USER_SERVICE_URL=http://sys_web/api/v1
+      - HPC_DRIVE_SERVICE_URL=http://hpc_drive:7777/api/v1/drive
+    networks:
+      - hpc_shared_network
+
+  hpc_drive:
+    image: pandora08/hpc-drive:latest
+    container_name: hpc_drive_service
+    ports:
+      - "7777:7777"
+    volumes:
+      - drive_data:/app/data
+      - uploads_data:/app/src/hpc_drive/uploads
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    environment:
+      DATABASE_URL: "sqlite:////app/data/drive.db"
+      AUTH_SERVICE_ME_URL: "http://sys_web:80/api/v1/me"
+    networks:
+      - hpc_shared_network
+    restart: always
+
+  # SERVICE 6: SHARED DATABASE
+  shared_db:
+    image: mysql:8.0
+    container_name: shared_mysql
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - shared_db_data:/var/lib/mysql
+      - ./create_dbs.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - hpc_shared_network
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  hpc_shared_network:
+    driver: bridge
+
+volumes:
+  drive_data:
+  uploads_data:
+  shared_db_data:
