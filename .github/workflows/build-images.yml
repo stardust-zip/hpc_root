@@ -69,16 +69,18 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # 1. Go to project folder
+            # Ensure this path matches your server structure exactly!
             cd /home/admin.hethongdientu/project_v1/hpc_root
 
             # 2. Update the docker-compose.prod.yml file
             git pull origin main
 
             # 3. Pull the NEW 'latest' images
-            docker compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml pull
 
             # 4. Restart containers with new code
-            docker compose -f docker-compose.prod.yml up -d
+            # CHANGED: docker compose -> docker-compose
+            docker-compose -f docker-compose.prod.yml up -d
 
             # 5. WAIT for Database
             echo "⏳ Waiting for Database..."
@@ -86,15 +88,16 @@ jobs:
 
             # 6. SYSTEM MANAGEMENT TASKS
             echo "🔧 Running Sys migrations..."
-            docker compose -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
-            docker compose -f docker-compose.prod.yml exec -T sys_app chmod -R 777 storage bootstrap/cache
-            docker compose -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
-            docker compose -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder
-            docker compose -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
+            # CHANGED: ALL docker compose -> docker-compose
+            docker-compose -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
+            docker-compose -f docker-compose.prod.yml exec -T sys_app chmod -R 777 storage bootstrap/cache
+            docker-compose -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
+            docker-compose -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder
+            docker-compose -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
 
             # 7. TUYEN DUNG TASKS
             echo "🔧 Running Tuyen migrations..."
-            docker compose -f docker-compose.prod.yml exec -T tuyen_app chmod -R 777 storage bootstrap/cache
-            docker compose -f docker-compose.prod.yml exec -T tuyen_app php artisan migrate --force
+            docker-compose -f docker-compose.prod.yml exec -T tuyen_app chmod -R 777 storage bootstrap/cache
+            docker-compose -f docker-compose.prod.yml exec -T tuyen_app php artisan migrate --force
 
             echo "✅ Deployment Complete!"
