@@ -221,7 +221,7 @@ services:
     container_name: fe_portal
     restart: always
     ports:
-      - "3005:3001"
+      - "3001:3001"
     deploy:
       resources:
         limits:
