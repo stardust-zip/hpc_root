@@ -288,7 +288,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - shared_db_data:/var/lib/mysql
       - ./create_dbs.sql:/docker-entrypoint-initdb.d/init.sql:ro
