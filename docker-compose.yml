@@ -315,7 +315,7 @@ services:
     container_name: fe_portal
     restart: unless-stopped
     ports:
-      - "3005:3001"
+      - "3001:3001"
     deploy:
       resources:
         limits:
