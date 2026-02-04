@@ -76,6 +76,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: root
       NOTIFICATION_SERVICE_URL: http://sys_web:80
       IDENTITY_SERVICE_URL: http://sys_web:80
+      JWT_SECRET: ${LMS_JWT_SECRET}
     volumes:
       - ./LMS/uploads:/app/uploads
       - ./LMS/logs:/app/logs
