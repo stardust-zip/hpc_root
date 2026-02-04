@@ -1,0 +1,57 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: system-management
+            context: ./System-Management
+            image_name: hpc-system-management
+          - service: fe-portal
+            context: ./fe-portal
+            image_name: hpc-fe-portal
+          - service: lms
+            context: ./LMS
+            image_name: hpc-lms
+          - service: tuyen-dung
+            context: ./Module_Tuyendung/back-end
+            image_name: hpc-tuyen-dung
+          - service: dispatch
+            context: ./hpc_dispatch_management
+            image_name: hpc-dispatch
+          - service: drive
+            context: ./hpc_drive
+            image_name: hpc-drive
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
