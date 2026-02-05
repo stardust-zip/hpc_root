@@ -59,7 +59,7 @@
 
     # 4. System-Management setup
     - name: Create Sys Storage Directories
-      command: docker compose exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
+      command: docker compose exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
 
     - name: Fix Sys Storage Permissions
       command: docker compose exec -T sys_app chmod -R 777 storage bootstrap/cache
