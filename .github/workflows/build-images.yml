@@ -58,7 +58,6 @@ jobs:
   deploy-to-server:
     needs: build-and-push
     runs-on: ubuntu-latest
-    # Run this only if we are on the main branch
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Deploy via SSH
@@ -68,46 +67,48 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. Define the path to your NEW compose tool
+            # --- CONFIGURATION ---
             DOCKER_COMPOSE=~/docker-compose
-
-            # 2. Go to project folder
-            cd /home/admin.hethongdientu/project_v1/hpc_root
-
-            # 3. Update code
+            PROJECT_PATH=/home/admin.hethongdientu/project_v1/hpc_root
+            
+            # --- 1. UPDATE CODE ---
+            cd $PROJECT_PATH
             git pull origin main
 
-            # 4. Pull images using the NEW tool
+            # --- 2. RESTART CONTAINERS ---
             $DOCKER_COMPOSE -f docker-compose.prod.yml pull
-
-            # 5. Restart containers (Clean slate to fix KeyError)
             $DOCKER_COMPOSE -f docker-compose.prod.yml down
             $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
 
-            # 6. Wait for DB
-            echo "⏳ Waiting for Database..."
+            echo "⏳ Waiting 20s for Database to initialize..."
             sleep 20
 
+            # --- 3. SYSTEM MANAGEMENT SETUP (CRITICAL FIXES) ---
+            echo "🔧 Fixing System Management Permissions & Autoload..."
+            
+            # A. Create ALL required folders (No curly braces for compatibility)
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/sessions
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/views
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/logs
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p bootstrap/cache
 
+            # B. Fix Ownership & Permissions (Web Server needs write access)
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chown -R www-data:www-data storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chmod -R 777 storage bootstrap/cache
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
 
-            # 7. Run Migrations (Using the NEW tool)
-            echo "🔧 Running Sys migrations..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app chmod -R 777 storage bootstrap/cache
-            
-            # NOTE: If this still fails with 'autoload.php', your Dockerfile is broken (see Step 3 below)
+            # C. Fix "Class Not Found" errors (Regenerate Autoloader on Server)
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app composer dump-autoload -o
+
+            # D. Clear Cache & Migrate
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
+            
+            # E. Seed Admin (Only if needed)
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder --force
 
-            echo "🔧 Running Tuyen migrations..."
+            # --- 4. RECRUITMENT MODULE SETUP ---
+            echo "🔧 Fixing Recruitment Module..."
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app chmod -R 777 storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan migrate --force
 
