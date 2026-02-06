@@ -156,6 +156,7 @@ services:
       - DB_DATABASE=system_services
       - DB_USERNAME=root
       - DB_PASSWORD=root
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       hpc_shared_network:
         aliases:
