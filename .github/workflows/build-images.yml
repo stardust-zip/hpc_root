@@ -88,7 +88,11 @@ jobs:
             echo "⏳ Waiting for Database..."
             sleep 20
 
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/sessions
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/views
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p bootstrap/cache
+
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chown -R www-data:www-data storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chmod -R 777 storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
