@@ -73,7 +73,12 @@ jobs:
             
             # --- 1. UPDATE CODE ---
             cd $PROJECT_PATH
-            git pull origin main
+            git fetch origin main
+
+            # Force the server to match the repo
+            git reset --hard origin/main
+
+            git submodule update --init --recursive
 
             # --- 2. RESTART CONTAINERS ---
             $DOCKER_COMPOSE -f docker-compose.prod.yml pull
