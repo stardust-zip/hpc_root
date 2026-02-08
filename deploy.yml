@@ -111,6 +111,9 @@
       register: key_gen_tuyen
       changed_when: "'Application key set' in key_gen_tuyen.stdout"
 
+    - name: Create Tuyen Storage Directories
+      command: docker compose exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+
     - name: Fix Tuyen Permissions
       command: docker compose exec -T tuyen_app chmod -R 777 storage bootstrap/cache
       ignore_errors: yes # Ignore if folders don't exist yet
