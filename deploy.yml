@@ -101,6 +101,13 @@
       register: fix_tuyen
       changed_when: "'installed' in fix_tuyen.stdout"
 
+    - name: Create Tuyen Storage Directories
+      command: docker compose exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+
+    - name: Fix Tuyen Permissions
+      command: docker compose exec -T tuyen_app chmod -R 777 storage bootstrap/cache
+      ignore_errors: yes # Ignore if folders don't exist yet
+
     - name: Install Tuyen Dependencies (Composer)
       command: docker compose exec -T tuyen_app composer install --no-interaction --prefer-dist
       register: composer_install_tuyen
@@ -111,12 +118,6 @@
       register: key_gen_tuyen
       changed_when: "'Application key set' in key_gen_tuyen.stdout"
 
-    - name: Create Tuyen Storage Directories
-      command: docker compose exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
-
-    - name: Fix Tuyen Permissions
-      command: docker compose exec -T tuyen_app chmod -R 777 storage bootstrap/cache
-      ignore_errors: yes # Ignore if folders don't exist yet
 
     # 4. Post Depoyment and Migrations
     - name: Wait for MySQL to be ready
