@@ -67,20 +67,17 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Config
+            # --- CONFIGURATION ---
             DOCKER_COMPOSE=~/docker-compose
             PROJECT_PATH=/home/admin.hethongdientu/project_v1/hpc_root
             
-            # Udpdate code
+            # --- 1. UPDATE CODE ---
             cd $PROJECT_PATH
             git fetch origin main
-
-            # Force the server to match the repo
             git reset --hard origin/main
             git submodule update --init --recursive
 
-
-            # Restart containers
+            # --- 2. RESTART CONTAINERS ---
             $DOCKER_COMPOSE -f docker-compose.prod.yml pull
             $DOCKER_COMPOSE -f docker-compose.prod.yml down
             $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
@@ -88,57 +85,54 @@ jobs:
             echo "⏳ Waiting 20s for Database to initialize..."
             sleep 20
 
-            # System-Management Setup
-            echo "Fixing System Management Permissions & Autoload..."
+            # --- 2.5 FORCE DATABASE CREATION ---
+            # Fixes the Python containers crashing because init.sql is ignored on existing volumes
+            echo "🔧 Ensuring all databases exist..."
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T shared_db mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS system_services; CREATE DATABASE IF NOT EXISTS module_tuyendung; CREATE DATABASE IF NOT EXISTS LMS; CREATE DATABASE IF NOT EXISTS hpc_drive; CREATE DATABASE IF NOT EXISTS hpc_dispatch;"
             
-            # Create all required folders
+            # Restart Python services so they connect to the newly created databases
+            $DOCKER_COMPOSE -f docker-compose.prod.yml restart dispatch_service hpc_drive
+            sleep 5
+
+            # --- 3. SYSTEM MANAGEMENT SETUP ---
+            echo "🔧 Setting up System Management..."
+            
+            # A. Create ALL required folders
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache storage/logs
 
-            # Fix ownership & permissions
+            # B. Fix Ownership & Permissions
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chown -R www-data:www-data storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chmod -R 777 storage bootstrap/cache
 
-            # Composer & Key Gen
+            # C. Composer & Cache Clear
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app composer install --no-interaction --prefer-dist
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan key:generate
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app composer dump-autoload -o
-
-            # Clear cache & migrate (core & task module)
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
 
-            # CHeck out this later since it/Removing duplicate seeding file
-            rm System-Management/Modules/Task/database/migrations/2025_09_05_160000_create_calendar_table.php 
-
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=Modules/Task/database/migrations --force
-            
-            # Seed Admin
+            # D. Migrate (Single run handles core + modules without duplicate table errors)
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --force
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder --force
 
-            #  Recruitment module setup
-            echo "Fixing Recruitment Module..."
+            # --- 4. RECRUITMENT MODULE SETUP ---
+            echo "🔧 Setting up Recruitment Module..."
             
-            # Install required system dependencies inside the Alpine/Ubuntu container for composer
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app sh -c 'if command -v apt-get >/dev/null; then apt-get update && apt-get install -y zip unzip git; elif command -v apk >/dev/null; then apk add --no-cache zip unzip git; fi'
 
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache public/cvs
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app chmod -R 777 storage bootstrap/cache || true
 
-            echo "Setting up public/cvs directory permission for Module_Tuyendung"
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app mkdir -p public/cvs
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app chown -R www-data:www-data public/cvs
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app chmod -R 775 public/cvs
 
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app composer install --no-interaction --prefer-dist
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan key:generate
             
             # Migrate and Seed Tuyen Module
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan migrate --force
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan db:seed --class=TeachersSeeder --force
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan db:seed --class=StudentSeeder --force
 
-            # Dispatch module setup
-            echo "Seeding Dispatch Service..."
+            # --- 5. DISPATCH MODULE SETUP ---
+            echo "🔧 Seeding Dispatch Service..."
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -w /app/src dispatch_service python -m hpc_dispatch_management.seed
 
-            echo "Deployment Complete!"
+            echo "✅ Deployment Complete!"
