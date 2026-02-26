@@ -105,6 +105,10 @@ jobs:
 
             # Clear cache & migrate (core & task module)
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
+
+            # CHeck out this later since it/Removing duplicate seeding file
+            rm System-Management/Modules/Task/database/migrations/2025_09_05_160000_create_calendar_table.php 
+
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=Modules/Task/database/migrations --force
             
