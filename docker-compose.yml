@@ -1,7 +1,5 @@
 services:
-  # ==============================================================================
-  # SERVICE 1: HPC DISPATCH MANAGEMENT (Python)
-  # ==============================================================================
+  # Service 1: hpc_dispatch_management (FastAPI)
   dispatch_service:
     build:
       context: ./hpc_dispatch_management
@@ -12,30 +10,35 @@ services:
       - "8888:8888"
     volumes:
       - ./hpc_dispatch_management/src:/app/src
-      - ./hpc_dispatch_management/hpc_dispatch.db:/app/hpc_dispatch.db
     deploy:
       resources:
         limits:
           memory: 300M
     environment:
+      - APP_ENV=local
       - NOTIFICATION_SERVICE_URL=http://sys_web/api/v1/events/publish
-      - DATABASE_URL=sqlite:///./hpc_dispatch.db
       - HPC_USER_SERVICE_URL=http://sys_web/api/v1
       - HPC_DRIVE_SERVICE_URL=http://hpc_drive:7777/api/v1/drive
+      - DATABASE_URL=mysql+pymysql://root:root@shared_db:3306/hpc_dispatch
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGO=HS256
+      - MOCK_AUTH_ENABLED=false
+    depends_on:
+      - shared_db
     networks:
       - hpc_shared_network
 
-  # ==============================================================================
-  # SERVICE 2: HPC DRIVE (Python)
-  # ==============================================================================
+  # Service 2: hpc_drive (FastAPI)
   hpc_drive:
     build:
       context: ./hpc_drive
       dockerfile: Dockerfile
     container_name: hpc_drive_service
+    command: uvicorn src.hpc_drive.main:app --host 0.0.0.0 --port 7777 --reload
     ports:
       - "7777:7777"
     volumes:
+      - ./hpc_drive/src:/app/src
       - drive_data:/app/data
       - uploads_data:/app/src/hpc_drive/uploads
     deploy:
@@ -43,15 +46,15 @@ services:
         limits:
           memory: 300M
     environment:
-      DATABASE_URL: "sqlite:////app/data/drive.db"
-      AUTH_SERVICE_ME_URL: "http://sys_web:80/api/v1/me"
+      DATABASE_URL: "mysql+pymysql://root:root@shared_db:3306/hpc_drive"
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - shared_db
     networks:
       - hpc_shared_network
     restart: unless-stopped
 
-  # ==============================================================================
-  # SERVICE 3: LMS (Java/Spring Boot)
-  # ==============================================================================
+  # Service 3: LMS (Spring Boot)
   lms-app:
     build:
       context: ./LMS
@@ -86,9 +89,7 @@ services:
     networks:
       - hpc_shared_network
 
-  # ==============================================================================
-  # SERVICE 4: MODULE TUYENDUNG (PHP/Laravel)
-  # ==============================================================================
+  # Service 4: Module-Tuyendung (Laravel)
   tuyen_app:
     build:
       context: ./Module_Tuyendung/back-end
@@ -132,9 +133,7 @@ services:
     depends_on:
       - tuyen_app
 
-  # ==============================================================================
-  # SERVICE 5: SYSTEM MANAGEMENT (Core - PHP/Laravel)
-  # ==============================================================================
+  # Service 5: System-Management (Laravel)
   sys_app:
     build:
       context: ./System-Management
@@ -218,7 +217,9 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - hpc_shared_network
+      hpc_shared_network:
+        aliases:
+          - reverb
 
   sys_zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -307,9 +308,7 @@ services:
     networks:
       - hpc_shared_network
 
-  # ==============================================================================
-  # SERVICE 6: FRONTEND PORTAL (Next.js)
-  # ==============================================================================
+  # Service 6: fe-portal (Next.js)
   fe_portal:
     build:
       context: ./fe-portal
@@ -334,9 +333,7 @@ services:
     networks:
       - hpc_shared_network
 
-  # ==============================================================================
-  # SERVICE 7: SHARED DATABASE (Replaces all 3 previous DBs)
-  # ==============================================================================
+  # Service 7: Shared Database 
   shared_db:
     image: mysql:8.0
     container_name: shared_mysql
@@ -361,6 +358,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Service 8: Db Gate
+  dbgate:
+    image: dbgate/dbgate
+    container_name: hpc_dbgate
+    restart: always
+    ports:
+      - "8067:3000"
+    networks:
+      - hpc_shared_network
 
 networks:
   hpc_shared_network:
