@@ -101,7 +101,9 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - hpc_shared_network
+      hpc_shared_network:
+        aliases:
+          - reverb
 
   sys_zookeeper:
     image: confluentinc/cp-zookeeper:latest
