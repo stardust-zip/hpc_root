@@ -1,7 +1,7 @@
 services:
   # SERVICE 1: SYSTEM MANAGEMENT
   sys_app:
-    image: pandora08/hpc-system-management:latest  
+    image: pandora08/hpc-system-management:latest
     container_name: hpc_app
     restart: always
     deploy:
@@ -76,8 +76,6 @@ services:
       resources:
         limits:
           memory: 256M
-    ports:
-      - "6380:6379"
     networks:
       hpc_shared_network:
         aliases:
@@ -117,8 +115,6 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
       KAFKA_OPTS: "-Xmx128m -Xms128m"
-    ports:
-      - "2181:2181"
     networks:
       hpc_shared_network:
         aliases:
@@ -130,8 +126,6 @@ services:
     restart: always
     depends_on:
       - sys_zookeeper
-    ports:
-      - "9092:9092"
     deploy:
       resources:
         limits:
@@ -195,7 +189,7 @@ services:
       - DB_PORT=3306
       - DB_DATABASE=module_tuyendung
       - DB_USERNAME=root
-      - DB_PASSWORD=root
+      - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
     networks:
       - hpc_shared_network
@@ -235,7 +229,7 @@ services:
       TZ: Asia/Ho_Chi_Minh
       SPRING_DATASOURCE_URL: jdbc:mysql://shared_db:3306/LMS?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       NOTIFICATION_SERVICE_URL: http://sys_web:80
       IDENTITY_SERVICE_URL: http://sys_web:80
       JWT_SECRET: ${JWT_SECRET}
@@ -285,7 +279,7 @@ services:
       - NOTIFICATION_SERVICE_URL=http://sys_web/api/v1/events/publish
       - HPC_USER_SERVICE_URL=http://sys_web/api/v1
       - HPC_DRIVE_SERVICE_URL=http://hpc_drive:7777/api/v1/drive
-      - DATABASE_URL=mysql+pymysql://root:root@shared_db:3306/hpc_dispatch
+      - DATABASE_URL=mysql+pymysql://root:${DB_PASSWORD}@shared_db:3306/hpc_dispatch
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGO=HS256
       - MOCK_AUTH_ENABLED=false
@@ -308,7 +302,7 @@ services:
         limits:
           memory: 300M
     environment:
-      DATABASE_URL: "mysql+pymysql://root:root@shared_db:3306/hpc_drive"
+      DATABASE_URL: "mysql+pymysql://root:${DB_PASSWORD}@shared_db:3306/hpc_drive"
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - shared_db
@@ -327,9 +321,7 @@ services:
         limits:
           memory: 1.5G
     environment:
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3307:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
     volumes:
       - shared_db_data:/var/lib/mysql
       - ./create_dbs.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -337,20 +329,19 @@ services:
       - hpc_shared_network
     healthcheck:
       test:
-        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_PASSWORD}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
-
-  # SERVICE 8: Db Gate
-  dbgate:
-    image: dbgate/dbgate
-    container_name: hpc_dbgate
-    restart: always
-    ports:
-      - "8067:3005"
-    networks:
-      - hpc_shared_network
 
 networks:
   hpc_shared_network:
