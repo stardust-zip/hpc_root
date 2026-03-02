@@ -110,7 +110,8 @@ jobs:
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
 
             # D. Migrate (Single run handles core + modules without duplicate table errors)
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --force
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=Modules/Task/database/migrations --force
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan db:seed --class=AdminSeeder --force
 
             # --- 4. RECRUITMENT MODULE SETUP ---
