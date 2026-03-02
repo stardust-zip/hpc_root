@@ -37,6 +37,19 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create Frontend Env File
+        run: |
+          cat << EOF > ./fe-portal/.env.production
+          NEXT_PUBLIC_API_URL=http://${{ secrets.SERVER_HOST }}:8082/api
+          NEXT_PUBLIC_DRIVE_API_URL=http://${{ secrets.SERVER_HOST }}:7777
+          NEXT_PUBLIC_DISPATCH_API_URL=http://${{ secrets.SERVER_HOST }}:8888
+          NEXT_PUBLIC_TUYENDUNG_API_URL=http://${{ secrets.SERVER_HOST }}:8020
+          NEXT_PUBLIC_LMS_API_URL=http://${{ secrets.SERVER_HOST }}:8083
+          NEXT_PUBLIC_REVERB_HOST=${{ secrets.SERVER_HOST }}
+          NEXT_PUBLIC_REVERB_PORT=8082
+          NEXT_PUBLIC_REVERB_SCHEME=http
+          EOF
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
