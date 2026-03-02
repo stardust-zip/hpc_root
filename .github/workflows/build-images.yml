@@ -88,7 +88,7 @@ jobs:
             # --- 2.5 FORCE DATABASE CREATION ---
             # Fixes the Python containers crashing because init.sql is ignored on existing volumes
             echo "🔧 Ensuring all databases exist..."
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T shared_db mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS system_services; CREATE DATABASE IF NOT EXISTS module_tuyendung; CREATE DATABASE IF NOT EXISTS LMS; CREATE DATABASE IF NOT EXISTS hpc_drive; CREATE DATABASE IF NOT EXISTS hpc_dispatch;"
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T shared_db mysql -u root -p"$DB_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS system_services; CREATE DATABASE IF NOT EXISTS module_tuyendung; CREATE DATABASE IF NOT EXISTS LMS; CREATE DATABASE IF NOT EXISTS hpc_drive; CREATE DATABASE IF NOT EXISTS hpc_dispatch;"
             
             # Restart Python services so they connect to the newly created databases
             $DOCKER_COMPOSE -f docker-compose.prod.yml restart dispatch_service hpc_drive
