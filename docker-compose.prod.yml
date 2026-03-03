@@ -235,6 +235,13 @@ services:
       NOTIFICATION_SERVICE_URL: http://sys_web:80
       IDENTITY_SERVICE_URL: http://sys_web:80
       JWT_SECRET: ${JWT_SECRET}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE}
+      VNPAY_SECRET_KEY: ${VNPAY_SECRET_KEY}
+      VNPAY_PAY_URL: ${VNPAY_PAY_URL}
+      VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     volumes:
       - ./LMS/uploads:/app/uploads
       - ./LMS/logs:/app/logs
