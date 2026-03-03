@@ -149,7 +149,7 @@ services:
 
   sys_queue_worker:
     image: pandora08/hpc-system-management:latest
-    container_name: hpc_queue_worker
+    container_name: hpc_queue
     restart: always
     deploy:
       resources:
