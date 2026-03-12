@@ -24,8 +24,8 @@ services:
       - JWT_ALGO=HS256
       - JWT_TTL=1440
       # Redis Connection
-      - REDIS_HOST=sys_redis
-      - REDIS_PORT=6379
+      - REDIS_HOST={REDIS_HOST}
+      - REDIS_PORT={REDIS_PORT}
       # Mail Config
       - MAIL_MAILER=${MAIL_MAILER}
       - MAIL_HOST=${MAIL_HOST}
@@ -243,8 +243,8 @@ services:
       VNPAY_PAY_URL: ${VNPAY_PAY_URL}
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+      REDIS_HOST: sys_redis
+      REDIS_PORT: 6379
     volumes:
       - ./LMS/uploads:/app/uploads
       - ./LMS/logs:/app/logs
