@@ -148,21 +148,22 @@ services:
     container_name: hpc_app
     restart: unless-stopped
     working_dir: /var/www
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     volumes:
       - ./System-Management:/var/www
     environment:
       - APP_URL=${APP_URL_SYS}
-      # UPDATED: Points to shared_db
       - DB_HOST=shared_db
       - DB_PORT=3306
       - DB_DATABASE=system_services
       - DB_USERNAME=root
       - DB_PASSWORD=root
       - JWT_SECRET=${JWT_SECRET}
+      - KAFKA_BROKERS=sys_kafka:9092
+      - REDIS_HOST=sys_redis
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=predis
+      - APP_TIMEZONE=Asia/Ho_Chi_Minh
+      - KAFKA_TOPIC=notifications
     networks:
       - hpc_shared_network
     depends_on:
@@ -278,12 +279,21 @@ services:
     container_name: hpc_queue_worker
     restart: unless-stopped
     working_dir: /var/www
-    deploy:
-      resources:
-        limits:
-          memory: 512M
     volumes:
       - ./System-Management:/var/www
+    # ---> ADD THIS ENTIRE BLOCK <---
+    environment:
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+      - REDIS_HOST=sys_redis
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=predis
+      - KAFKA_BROKERS=sys_kafka:9092
+      - APP_TIMEZONE=Asia/Ho_Chi_Minh
+      - KAFKA_TOPIC=notifications
     command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
     depends_on:
       - sys_app
@@ -298,13 +308,21 @@ services:
     container_name: hpc_kafka_consumer
     restart: unless-stopped
     working_dir: /var/www
-
-    deploy:
-      resources:
-        limits:
-          memory: 256M
     volumes:
       - ./System-Management:/var/www
+    # ---> ADD THIS ENTIRE BLOCK <---
+    environment:
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+      - REDIS_HOST=sys_redis
+      - REDIS_PORT=6379
+      - REDIS_CLIENT=predis
+      - KAFKA_BROKERS=sys_kafka:9092
+      - APP_TIMEZONE=Asia/Ho_Chi_Minh
+      - KAFKA_TOPIC=notifications
     command: php artisan kafka:consume
     depends_on:
       - sys_app
@@ -371,6 +389,35 @@ services:
     restart: always
     ports:
       - "8067:3000"
+    networks:
+      - hpc_shared_network
+
+
+  # Service 9: Loki
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - hpc_shared_network
+
+  # Service 10: promttail
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # CRITICAL
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # CRITICAL
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - hpc_shared_network
+
+  # Service 11: grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
     networks:
       - hpc_shared_network
 
