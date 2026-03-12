@@ -24,8 +24,9 @@ services:
       - JWT_ALGO=HS256
       - JWT_TTL=1440
       # Redis Connection
-      - REDIS_HOST={REDIS_HOST}
-      - REDIS_PORT={REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CLIENT=${REDIS_CLIENT}
       # Mail Config
       - MAIL_MAILER=${MAIL_MAILER}
       - MAIL_HOST=${MAIL_HOST}
@@ -98,8 +99,8 @@ services:
       - REVERB_APP_ID=${REVERB_APP_ID}
       - REVERB_APP_KEY=${REVERB_APP_KEY}
       - REVERB_APP_SECRET=${REVERB_APP_SECRET}
-      - REDIS_HOST=sys_redis
-      - REDIS_PORT=6379
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     ports:
       - "8081:8080"
     networks:
@@ -157,6 +158,18 @@ services:
       resources:
         limits:
           memory: 512M
+    environment:
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CLIENT=${REDIS_CLIENT}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION}
     command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
     depends_on:
       - sys_app
@@ -172,6 +185,17 @@ services:
       resources:
         limits:
           memory: 256M
+    environment:
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=mysql
+      - DB_HOST=shared_db
+      - DB_PORT=3306
+      - DB_DATABASE=system_services
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_CLIENT=${REDIS_CLIENT}
     command: php artisan kafka:consume
     depends_on:
       - sys_app
@@ -243,8 +267,8 @@ services:
       VNPAY_PAY_URL: ${VNPAY_PAY_URL}
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-      REDIS_HOST: sys_redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
     volumes:
       - ./LMS/uploads:/app/uploads
       - ./LMS/logs:/app/logs
