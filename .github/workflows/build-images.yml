@@ -44,7 +44,7 @@ jobs:
           NEXT_PUBLIC_DRIVE_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:7777/api/v1
           NEXT_PUBLIC_DISPATCH_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8888
           NEXT_PUBLIC_TUYENDUNG_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8020
-          NEXT_PUBLIC_LMS_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083
+          NEXT_PUBLIC_LMS_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083/api
           NEXT_PUBLIC_REVERB_HOST=hethongdientu.khoacongnghethongtinhpc.io.vn
           NEXT_PUBLIC_REVERB_PORT=8082
           NEXT_PUBLIC_REVERB_SCHEME=https
