@@ -5,6 +5,7 @@ services:
       context: ./hpc_dispatch_management
       dockerfile: Dockerfile
     container_name: hpc_dispatch_service
+    command: uvicorn src.hpc_dispatch_management.main:app --host 0.0.0.0 --port 8888 --reload
     restart: unless-stopped
     ports:
       - "8888:8888"
@@ -22,7 +23,6 @@ services:
       - DATABASE_URL=mysql+pymysql://root:root@shared_db:3306/hpc_dispatch
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGO=HS256
-      - MOCK_AUTH_ENABLED=false
     depends_on:
       - shared_db
     networks:
@@ -49,7 +49,8 @@ services:
       DATABASE_URL: "mysql+pymysql://root:root@shared_db:3306/hpc_drive"
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      - shared_db
+      shared_db:
+        condition: service_healthy
     networks:
       - hpc_shared_network
     restart: unless-stopped
