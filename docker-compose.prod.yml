@@ -324,7 +324,6 @@ services:
       - DATABASE_URL=mysql+pymysql://root:${DB_PASSWORD}@shared_db:3306/hpc_dispatch
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ALGO=HS256
-      - MOCK_AUTH_ENABLED=false
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
     depends_on:
       - shared_db
