@@ -357,7 +357,7 @@ services:
     networks:
       - hpc_shared_network
 
-  # Service 7: Shared Database 
+  # Service 7: Shared Database
   shared_db:
     image: mysql:8.0
     container_name: shared_mysql
@@ -393,7 +393,6 @@ services:
     networks:
       - hpc_shared_network
 
-
   # Service 9: Loki
   loki:
     image: grafana/loki:latest
@@ -407,7 +406,7 @@ services:
   promtail:
     image: grafana/promtail:latest
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # CRITICAL
+      - /var/run/docker.sock:/var/run/docker.sock:ro # CRITICAL
       - /var/lib/docker/containers:/var/lib/docker/containers:ro # CRITICAL
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
