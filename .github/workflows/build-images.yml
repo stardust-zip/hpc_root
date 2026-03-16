@@ -3,6 +3,12 @@ name: Build and Push Docker Images
 on:
   push:
     branches: ["main"]
+    paths-ignore:
+      - "docker-compose.yml"
+      - "local_deploy.sh"
+      - "test_script.sh"
+      - "README.md"
+      - ".gitignore"
 
 jobs:
   build-and-push:
