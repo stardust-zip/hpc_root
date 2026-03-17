@@ -50,15 +50,14 @@ cd hpc_root
 ```
 
 ### Bước 2: Code trong service của mình
+
 VD:, sau khi clone `hpc_root`, ta có cấu trúc sau
 
 ```bash
 hpc_root LMS
 ```
 
-{% hint style="warning" %}
-Không code trong hpc_root/LMS, chỉ code trong LMS nếu thực hiện cách 2.
-{% endhint %}
+> \[!warning] Không code trong hpc\_root/LMS, chỉ code trong LMS nếu thực hiện cách 2.
 
 ```bash
 cd LMS
@@ -77,7 +76,6 @@ git switch main # hoặc master
 git fetch origin main
 git pull
 ```
-
 
 ### Bước 4: Đẩy code lên server
 
