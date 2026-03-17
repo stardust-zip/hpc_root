@@ -56,8 +56,9 @@ VD:, sau khi clone `hpc_root`, ta có cấu trúc sau
 hpc_root LMS
 ```
 
-> [!warning]
-> Không code trong hpc_root/LMS, chỉ code trong LMS nếu thực hiện cách 2.
+{% hint style="warning" %}
+Không code trong hpc_root/LMS, chỉ code trong LMS nếu thực hiện cách 2.
+{% endhint %}
 
 ```bash
 cd LMS
