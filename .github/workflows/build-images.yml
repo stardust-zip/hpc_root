@@ -9,7 +9,8 @@ on:
       - "test_script.sh"
       - "README.md"
       - ".gitignore"
-      - "docs/"
+      - "docs/**"
+      - "docs"
 
 jobs:
   build-and-push:
