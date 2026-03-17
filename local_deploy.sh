@@ -41,6 +41,8 @@ cat <<EOF > create_dbs.sql
 CREATE DATABASE IF NOT EXISTS LMS;
 CREATE DATABASE IF NOT EXISTS module_tuyendung;
 CREATE DATABASE IF NOT EXISTS system_services;
+CREATE DATABASE IF NOT EXISTS hpc_drive;
+CREATE DATABASE IF NOT EXISTS hpc_dispatch;
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 EOF
 
@@ -129,8 +131,7 @@ ${COMPOSE_CMD} exec -T tuyen_app php artisan db:seed --class=TeachersSeeder --fo
 ${COMPOSE_CMD} exec -T tuyen_app php artisan db:seed --class=StudentSeeder --force
 
 log_step "Running Dispatch Migrations..."
-${COMPOSE_CMD} exec -w /app/src dispatch_service python -m hpc_dispatch_management.seed
-
+${COMPOSE_CMD} exec dispatch_service python -m src.hpc_dispatch_management.db.seed
 
 
 # Phase 6: Finish
