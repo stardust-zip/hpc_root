@@ -303,6 +303,8 @@ services:
           memory: 1G
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_STORAGE_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082
+      - NEXT_PUBLIC_LMS_UPLOADS_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083/uploads
       - NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST}
       - NEXT_PUBLIC_REVERB_PORT=${NEXT_PUBLIC_REVERB_PORT}
       - NEXT_PUBLIC_REVERB_SCHEME=${NEXT_PUBLIC_REVERB_SCHEME}
