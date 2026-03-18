@@ -75,6 +75,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: false
 
   deploy-to-server:
     needs: build-and-push
