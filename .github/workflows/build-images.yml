@@ -108,6 +108,8 @@ jobs:
             mkdir -p System-Management/storage/app/public System-Management/storage/logs
             mkdir -p Module_Tuyendung/back-end/storage/app/public Module_Tuyendung/back-end/public/cvs
 
+            chmod -R 777 LMS/uploads LMS/logs System-Management/storage Module_Tuyendung/back-end/storage Module_Tuyendung/back-end/public/cvs
+
             $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
 
             echo "⏳ Waiting 20s for Database to initialize..."
