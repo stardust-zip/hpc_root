@@ -75,6 +75,15 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image_name }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082/api
+            NEXT_PUBLIC_STORAGE_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082
+            NEXT_PUBLIC_DRIVE_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:7777/api/v1
+            NEXT_PUBLIC_DISPATCH_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8888
+            NEXT_PUBLIC_LMS_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083/api
+            NEXT_PUBLIC_REVERB_HOST=hethongdientu.khoacongnghethongtinhpc.io.vn
+            NEXT_PUBLIC_REVERB_PORT=8082
+            NEXT_PUBLIC_REVERB_SCHEME=http
 
   deploy-to-server:
     needs: build-and-push
