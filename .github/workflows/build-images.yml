@@ -102,6 +102,12 @@ jobs:
             # --- 2. RESTART CONTAINERS ---
             $DOCKER_COMPOSE -f docker-compose.prod.yml pull
             $DOCKER_COMPOSE -f docker-compose.prod.yml down
+
+            echo "🔧 Pre-creating upload directories on the host..."
+            mkdir -p LMS/uploads LMS/logs
+            mkdir -p System-Management/storage/app/public System-Management/storage/logs
+            mkdir -p Module_Tuyendung/back-end/storage/app/public Module_Tuyendung/back-end/public/cvs
+
             $DOCKER_COMPOSE -f docker-compose.prod.yml up -d
 
             echo "⏳ Waiting 20s for Database to initialize..."
@@ -119,17 +125,23 @@ jobs:
             # --- 3. SYSTEM MANAGEMENT SETUP ---
             echo "🔧 Setting up System Management..."
 
+
+
             # A. Create ALL required folders
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache storage/logs
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache storage/logs storage/app/public
 
             # B. Fix Ownership & Permissions
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chown -R www-data:www-data storage bootstrap/cache
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 sys_app chmod -R 777 storage bootstrap/cache
 
+
+
             # C. Composer & Cache Clear
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app composer install --no-interaction --prefer-dist
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app composer dump-autoload -o
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan optimize:clear
+
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan storage:link || true
 
             # D. Migrate (Single run handles core + modules without duplicate table errors)
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T sys_app php artisan migrate --path=database/migrations --force
@@ -141,13 +153,15 @@ jobs:
 
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app sh -c 'if command -v apt-get >/dev/null; then apt-get update && apt-get install -y zip unzip git; elif command -v apk >/dev/null; then apk add --no-cache zip unzip git; fi'
 
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache public/cvs
-            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app chmod -R 777 storage bootstrap/cache || true
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache public/cvs storage/app/public
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app chmod -R 777 storage bootstrap/cache || true
 
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app chown -R www-data:www-data public/cvs
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T -u 0 tuyen_app chmod -R 775 public/cvs
 
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app composer install --no-interaction --prefer-dist
+
+            $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan storage:link || true
 
             # Migrate and Seed Tuyen Module
             $DOCKER_COMPOSE -f docker-compose.prod.yml exec -T tuyen_app php artisan migrate --force
