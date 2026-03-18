@@ -49,6 +49,8 @@ jobs:
         run: |
           cat << EOF > ./fe-portal/.env.production
           NEXT_PUBLIC_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082/api
+          NEXT_PUBLIC_STORAGE_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082
+          NEXT_PUBLIC_LMS_UPLOADS_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083/uploads
           NEXT_PUBLIC_DRIVE_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:7777/api/v1
           NEXT_PUBLIC_DISPATCH_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8888
           NEXT_PUBLIC_TUYENDUNG_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8020
@@ -77,6 +79,7 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NEXT_PUBLIC_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082/api
+            NEXT_PUBLIC_LMS_UPLOADS_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8083/uploads
             NEXT_PUBLIC_STORAGE_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8082
             NEXT_PUBLIC_DRIVE_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:7777/api/v1
             NEXT_PUBLIC_DISPATCH_API_URL=http://hethongdientu.khoacongnghethongtinhpc.io.vn:8888
