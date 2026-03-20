@@ -48,7 +48,7 @@ services:
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - KAFKA_BROKERS=${KAFKA_BROKERS}
     volumes:
-      - ./System-Management/storage/app/public:/var/www/storage/app/public
+      - ./System-Management/storage/app/public:/var/www/storage
     networks:
       hpc_shared_network:
         aliases:
@@ -188,7 +188,7 @@ services:
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
     volumes:
-      - ./System-Management/storage/app/public:/var/www/storage/app/public
+      - ./System-Management/storage/app/public:/var/www/storage
     command: php artisan queue:work --queue=default --verbose --tries=3 --timeout=90
     depends_on:
       - sys_app
